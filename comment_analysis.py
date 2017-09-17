@@ -9,9 +9,10 @@ from gensim import corpora, models
 
 
 def parse_url(url, data):
+    pattern = r'(?<=' + data['callback'] + '\().*(?=\);)'
     try:
         response = requests.get(url, params=data).text
-        comments_json = re.search(r'(?<=fetchJSON_comment98vv119944\().*(?=\);)', response).group(0)
+        comments_json = re.search(pattern, response).group(0)
     except RequestException as e:
         return None
     return comments_json
@@ -70,10 +71,14 @@ def print_topics(cut_3, num=50):
 
 def main():
     url = 'https://club.jd.com/comment/productPageComments.action'
+    # callback = 'fetchJSON_comment98vv119944'
+    # productId = '4586850'
+    callback = 'fetchJSON_comment98vv32948'
+    productId = '5181380'
     data = {
-        'callback': 'fetchJSON_comment98vv119944',
-        'productId': '4586850',
-        'score': 1,
+        'callback': callback,
+        'productId': productId,
+        'score': 2,
         'sortType': 6,
         'pageSize': 10,
         'isShadowSku': 0,
