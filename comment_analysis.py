@@ -1,14 +1,21 @@
 import re, requests
 import json
 import pandas as pd
-# import pymysql
 from requests.exceptions import RequestException
-# from multiprocessing import Pool
 import jieba
 from gensim import corpora, models
 
+import pymysql
+from multiprocessing import Pool
+
 
 def parse_url(url, data):
+    '''
+    fetchJSON_comment
+    :param url: url
+    :param data: Query String Parameters
+    :return: fetchJSON_comment
+    '''
     pattern = r'(?<=' + data['callback'] + '\().*(?=\);)'
     try:
         response = requests.get(url, params=data).text
@@ -19,6 +26,12 @@ def parse_url(url, data):
 
 
 def create_dataframe(url, data):
+    '''
+    parse fetchJSON_comment to create dataframe
+    :param url: url
+    :param data: Query String Parameters
+    :return: create an empty dataframe
+    '''
     comments_json = parse_url(url, data)
     j = json.loads(comments_json)
     comments = j['comments']
@@ -27,6 +40,14 @@ def create_dataframe(url, data):
 
 
 def append_dataframe(url, data, page, df_comment):
+    '''
+    append the dataframe from the selected page
+    :param url: url
+    :param data: Query String Parameters
+    :param page: page
+    :param df_comment: the original dataframe
+    :return: appended dataframe
+    '''
     data['page'] = page
     comments_json = parse_url(url, data)
     j = json.loads(comments_json)
@@ -37,6 +58,13 @@ def append_dataframe(url, data, page, df_comment):
 
 
 def get_comments(url, data, pages):
+    '''
+    get comments dataframe from input url, query string and number of pages
+    :param url: url
+    :param data: Query String Parameters
+    :param pages: number of pages to be crawled
+    :return: dataframe that contains the comments
+    '''
     df_comment = create_dataframe(url, data)
     for i in range(pages):
         df_comment = append_dataframe(url, data, i, df_comment)
@@ -45,11 +73,12 @@ def get_comments(url, data, pages):
 
 
 def mycut(s):
+    # cut comment sentence with jieba
     return ' '.join(jieba.cut(s))
 
 
 def cut_sentence(df):
-    cut_1 = df.apply(mycut)
+    cut_1 = df.apply(mycut) # 用jieba库做分词
     stop_list = 'stoplist.txt'
     stop = pd.read_csv(stop_list, encoding='utf-8', header=None, sep='tipdm', engine='python')
     # sep设置分割词，由于csv默认以半角逗号为分割词，而该词恰好在停用词表中，因此会导致读取出错
@@ -62,6 +91,12 @@ def cut_sentence(df):
 
 
 def print_topics(cut_3, num=50):
+    '''
+    print topics of given number
+    :param cut_3: material
+    :param num: number of topics, default: 50
+    :return: no return, just print topics
+    '''
     dicts = corpora.Dictionary(cut_3)  # 建立词典
     corpus = [dicts.doc2bow(i) for i in cut_3]  # 建立语料库
     lda = models.LdaModel(corpus, num_topics=num, id2word=dicts)  # LDA模型训练
@@ -73,8 +108,8 @@ def main():
     url = 'https://club.jd.com/comment/productPageComments.action'
     # callback = 'fetchJSON_comment98vv119944'
     # productId = '4586850'
-    callback = 'fetchJSON_comment98vv32948'
-    productId = '5181380'
+    callback = 'fetchJSON_comment98vv2167'  # modify this string based on specified item
+    productId = '4431213'  # productId
     data = {
         'callback': callback,
         'productId': productId,
